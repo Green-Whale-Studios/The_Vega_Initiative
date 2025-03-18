@@ -227,8 +227,12 @@ sprites.append(starSprite)
 zoomMultiplier = 1
 
 def updateZoomMultiplier():
+    global sprites  # Ensure we're modifying the global sprite list
     for sprite in sprites:
-        sprite.width()
+        sprite.width = int(sprite.image.get_width() * zoomMultiplier)
+        sprite.height = int(sprite.image.get_height() * zoomMultiplier)
+        sprite.image = pygame.transform.scale(sprite.image, (sprite.width, sprite.height))
+
 
 
 # main game loop in async

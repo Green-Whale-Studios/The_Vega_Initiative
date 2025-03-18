@@ -149,6 +149,22 @@ class Student(Citizen):
 def draw_cursor(x, y):
     screen.blit(cursor, (x, y) ) 
 
+class Sprite:
+    def __init__(self, name: str, reference: hex, defaultHeight: int, imgPath: str, x: int, y: int):
+        self.name = name
+        self.reference = reference
+        self.defaultHeight = defaultHeight
+        self.imgPath = imgPath
+        self.image = pygame.image.load(imgPath)
+        
+        self.width = int(self.image.get_width() * zoomMultiplier)
+        self.height = int(self.image.get_height() * zoomMultiplier)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        
+        logger.info(f"Sprite {name} has been initialized")
+        screen.blit(self.image, (x, y))
+
+
 logger = logging.getLogger(__name__)
 logger.info('THE VEGA INITIATIVE')
 logger.info('Game initialized, starting')
@@ -201,8 +217,18 @@ clock = pygame.time.Clock()
 logger.info('Cursor initialized')
 logger.info('Clock initialized')
 
+sprites = []
+
 # define sprites
 starSprite = pygame.image.load('assets/star.png')
+sprites.append(starSprite)
+
+
+zoomMultiplier = 1
+
+def updateZoomMultiplier():
+    for sprite in sprites:
+        sprite.width()
 
 
 # main game loop in async

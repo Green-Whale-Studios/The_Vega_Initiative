@@ -201,10 +201,18 @@ clock = pygame.time.Clock()
 logger.info('Cursor initialized')
 logger.info('Clock initialized')
 
+# define sprites
+starSprite = pygame.image.load('assets/star.png')
+
+
 # main game loop in async
 
 async def main():
     logger.info('Main function has been started')
+    screen.fill('#4a06c9')
+    for i in range(10): # add stars
+        screen.blit(starSprite,(random.randint(20,WIDTH),random.randint(20,HEIGHT)))
+    pygame.display.flip()
     while game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -225,7 +233,7 @@ async def main():
         cursorY += cursorY_change
         await asyncio.sleep(0)
         # game updates
-        pygame.display.update()
+        pygame.display.flip()
         clock.tick(FPS)
 
 asyncio.run(main())

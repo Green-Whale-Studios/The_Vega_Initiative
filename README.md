@@ -10,3 +10,5 @@ https://green-whale-studios.github.io/The-Vega-Initiative/
 
 ### Dev Branch:
 
+Must be manually run locally (see localhost.md)
+

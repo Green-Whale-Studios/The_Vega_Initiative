@@ -1,6 +1,6 @@
 # The_Vega_Initiative
 
-A 2D city builder on an alien planet. Coded in pygame-ce.
+A 2D city builder on an alien planet. Coded in Pygame-ce and rendered for web in Pygbag.
 
 ## Link to pages:
 

@@ -1,13 +1,20 @@
 # game.py
 from pyscript import display
 from tilemap import Tilemap
-import random, math, time, pygame, asyncio, logging
+import random, math, time, pygame, asyncio, logging, os
+
+# define custom errors
 
 class MaterialException(Exception):
     pass
 
 class BuildingException(Exception):
     pass
+
+class SaveError(Exception):
+    pass
+
+# define game object classes
 
 class Material:
     def __init__(self, name:str, quantity:int):
@@ -149,67 +156,148 @@ class Student(Citizen):
 def draw_cursor(x, y):
     screen.blit(cursor, (x, y) ) 
 
+# begin game code and get logger
+
 logger = logging.getLogger(__name__)
 logger.info('THE VEGA INITIATIVE')
 logger.info('Game initialized, starting')
 
-entertainmentBuildings = []
-workplaces = []
-homes = []
-citizens = []
+# define game functions
+
+def getLocalVarName(var):
+    for name, value in locals().items():
+        if value == var:
+            return name
+
+def getGlobalVarName(var):
+    for name, value in globals().items():
+        if value == var:
+            return name
+
+def setLocalVarValue(name,value):
+    locals()[name] = value
+
+def setGlobalVarValue(name,value):
+    globals()[name] = value
+
+def loadGame(file = 'save.json'):
+    if os.path.exists(file):
+        with open(file,'r') as fileDescriptor:
+            loadJson = fileDescriptor.read()
+        
+        # now we should have a dict with the names and values of all the variables
+        loadDict = json.loads(loadJson)
+
+        # we then set global variables
+        for name, value in loadDict:
+            setGlobalVarValue(name,value)
+        return True
+    else:
+        return False
+
+
+def saveGame(vars,file = 'save.json'):
+    saveDict = dict()
+    for var in vars:
+        saveDict[getGlobalVarName(var)] = var
+    
+    # now we should have a dict with the names and values of all the variables
+    saveJson = json.dumps(saveDict)
+
+    # we then save this to a file
+    with open(file,'w') as fileDescriptor:
+        fileDescriptor.write(saveJson)
+    
+    # then we verify the file
+    with open(file,'r') as fileDescriptor:
+        if fileDescriptor.read() != saveJson:
+            return False # if data is incorrect, tell the game loop saving has failed
+
+    return True
+
+# define load-specific variables, that must be saved
+
+if not loadGame():
+    entertainmentBuildings = []
+    workplaces = []
+    homes = []
+    citizens = []
+
+saveVars = [entertainmentBuildings,workplaces,homes,citizens] # (all variables above should be listed here)
+
+# define load-specific variables, that do not need to be saved
 numCitizens = len(citizens)
-lastTime = time.time()
+
+# define setting-specific variables, that depend on game settings
 timeStep = 1/60
 accumulator = 0.0
-game = True
 FPS = 60
 WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-logger.info('Screen initialized')
+# define constant variables, that do not change ever
 
-# Define core, primary materials
+if not loadGame('materials.json'):
+    # define primary materials...
+    wood = PrimaryMaterial("wood", 0, 0)
+    stone = PrimaryMaterial("stone", 0, 0)
+    food = PrimaryMaterial("food", 0, 0)
+    water = PrimaryMaterial("water", 0, 0)
+    iron = PrimaryMaterial("iron", 0, 0)
+    sulfur = PrimaryMaterial("sulpur", 0, 0)
+    copper = PrimaryMaterial("copper", 0, 0)
+    oil = PrimaryMaterial("oil", 0, 0)
+    gas = PrimaryMaterial("gas", 0, 0)
+    sand = PrimaryMaterial("sand", 0, 0)
+    alien_biology = PrimaryMaterial("alien_biology", 0, 0)
+    earth_biology = PrimaryMaterial("earth_biology", 0, 0)
+    silicon = PrimaryMaterial("silicon", 0, 0)
 
-wood = PrimaryMaterial("wood", 0, 0)
-stone = PrimaryMaterial("stone", 0, 0)
-food = PrimaryMaterial("food", 0, 0)
-water = PrimaryMaterial("water", 0, 0)
-iron = PrimaryMaterial("iron", 0, 0)
-sulfur = PrimaryMaterial("sulpur", 0, 0)
-copper = PrimaryMaterial("copper", 0, 0)
-oil = PrimaryMaterial("oil", 0, 0)
-gas = PrimaryMaterial("gas", 0, 0)
-sand = PrimaryMaterial("sand", 0, 0)
-alien_biology = PrimaryMaterial("alien_biology", 0, 0)
-earth_biology = PrimaryMaterial("earth_biology", 0, 0)
-silicon = PrimaryMaterial("silicon", 0, 0)
+    # ... and secondary materials
+    concrete = SecondaryMaterial("concrete", 0, {sand: 2, water: 1, sulfur: 1})
 
-# Define secondary materials
-
-concrete = SecondaryMaterial("concrete", 0, {sand: 2, water: 1, sulfur: 1})
+saveMaterials = [wood, stone, food, water, iron, sulfur, copper, oil, gas, sand, alien_biology, earth_biology, silicon, concrete]
 
 logger.info('Materials initialized')
 
-# player cursor settings
+# load the cursor and cursor-specific settings
 cursor = pygame.image.load("cursor.png")
 cursorX = 376
 cursorY = 480
 cursorX_change = 0
 cursorY_change = 0
-clock = pygame.time.Clock()
 
+# load important pygame objects, and set game to running
+clock = pygame.time.Clock()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+lastTime = time.time()
+game = True
+
+logger.info('Screen initialized')
 logger.info('Cursor initialized')
 logger.info('Clock initialized')
+
+# define sprites
+starSprite = pygame.image.load('assets/star.png')
 
 # main game loop in async
 
 async def main():
+    global saveVars, saveMaterials
     logger.info('Main function has been started')
     while game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 logger.info('Quit received, ending game loop')
+                if saveGame(saveVars):
+                    logger.info('Saved game')
+                else:
+                    raise SaveError('Game could not be saved - check perms?') # should be replaced with a graphical error and a logger.warning() when we have assets
+                if saveGame(saveMaterials,'materials.json'):
+                    logger.info('Saved materials')
+                else:
+                    raise SaveError('Materials could not be saved - check perms?')
                 game = False
+                break
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     cursorX_change = -1
@@ -225,7 +313,7 @@ async def main():
         cursorY += cursorY_change
         await asyncio.sleep(0)
         # game updates
-        pygame.display.update()
+        pygame.display.flip()
         clock.tick(FPS)
 
 asyncio.run(main())

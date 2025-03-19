@@ -20,6 +20,7 @@ class Material:
     def __init__(self, name:str, quantity:int):
         self.name = name
         self.quantity = quantity
+        materials.append(self)
     
     def add(self, quantity):
         self.quantity += quantity
@@ -284,6 +285,8 @@ saveMaterials = [wood, stone, food, water, iron, sulfur, copper, oil, gas, sand,
 
 logger.info('Materials initialized')
 
+materials = []
+
 # load the cursor and cursor-specific settings
 cursor = pygame.image.load("cursor.png")
 cursorX = 376
@@ -303,6 +306,19 @@ logger.info('Clock initialized')
 
 # define sprites
 starSprite = pygame.image.load('assets/star.png')
+
+# define miscelanious functions
+
+def DrawResources():
+    x = screen.get_width() - 10
+    y = 10
+    for material in materials:
+        text = font.render(f"{material.name}: {material.quantity}", True, (255, 255, 255))
+        textRect = text.get_rect(topright=(x,y))
+        screen.blit(text, textRect)
+        y += 20
+
+
 
 # main game loop in async
 
@@ -333,6 +349,10 @@ async def main():
                 if event.key == pygame.K_DOWN:
                     cursorY_change = 1
         
+        # update resource values
+
+        DrawResources()
+
         # movement updates
         cursorX += cursorX_change
         cursorY += cursorY_change

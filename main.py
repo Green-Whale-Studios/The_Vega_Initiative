@@ -20,6 +20,7 @@ class Material:
     def __init__(self, name:str, quantity:int):
         self.name = name
         self.quantity = quantity
+        materials.append(self)
     
     def add(self, quantity):
         self.quantity += quantity
@@ -101,6 +102,23 @@ class Home(Building):
         else:
             raise BuildingException("Resident not found")
 
+class Sprite:
+    def __init__(self, name: str, reference: hex, defaultHeight: int, imgPath: str, x: int, y: int):
+        self.name = name
+        self.reference = reference
+        self.defaultHeight = defaultHeight
+        self.imgPath = imgPath
+        self.image = pygame.image.load(imgPath)
+        
+        # Apply zoomMultiplier when initializing
+        self.width = int(self.image.get_width() * zoomMultiplier)
+        self.height = int(self.image.get_height() * zoomMultiplier)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        
+        logger.info(f"Sprite {name} has been initialized")
+        screen.blit(self.image, (x, y))
+
+
 class Citizen:
     def __init__(self, reference: hex, name: str, happiness: float = 100, health: float = 100, age: float = 0, productivity: float = 0, home:Home = None):
         self.name = name
@@ -163,6 +181,13 @@ logger.info('THE VEGA INITIATIVE')
 logger.info('Game initialized, starting')
 
 # define game functions
+
+def updateZoomMultiplier():
+    global sprites  # Ensure we're modifying the global sprite list
+    for sprite in sprites:
+        sprite.width = int(sprite.image.get_width() * zoomMultiplier)
+        sprite.height = int(sprite.image.get_height() * zoomMultiplier)
+        sprite.image = pygame.transform.scale(sprite.image, (sprite.width, sprite.height))
 
 def getLocalVarName(var):
     for name, value in locals().items():
@@ -233,6 +258,7 @@ timeStep = 1/60
 accumulator = 0.0
 FPS = 60
 WIDTH, HEIGHT = 800, 600
+zoomMultiplier = 1
 
 # define constant variables, that do not change ever
 
@@ -259,6 +285,8 @@ saveMaterials = [wood, stone, food, water, iron, sulfur, copper, oil, gas, sand,
 
 logger.info('Materials initialized')
 
+materials = []
+
 # load the cursor and cursor-specific settings
 cursor = pygame.image.load("cursor.png")
 cursorX = 376
@@ -278,6 +306,19 @@ logger.info('Clock initialized')
 
 # define sprites
 starSprite = pygame.image.load('assets/star.png')
+
+# define miscelanious functions
+
+def DrawResources():
+    x = screen.get_width() - 10
+    y = 10
+    for material in materials:
+        text = font.render(f"{material.name}: {material.quantity}", True, (255, 255, 255))
+        textRect = text.get_rect(topright=(x,y))
+        screen.blit(text, textRect)
+        y += 20
+
+
 
 # main game loop in async
 
@@ -308,6 +349,10 @@ async def main():
                 if event.key == pygame.K_DOWN:
                     cursorY_change = 1
         
+        # update resource values
+
+        DrawResources()
+
         # movement updates
         cursorX += cursorX_change
         cursorY += cursorY_change
